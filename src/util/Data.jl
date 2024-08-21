@@ -190,7 +190,7 @@ function update_columns(df::DataFrame)
     return df
 end
 
-function load_data(path::String; use_cached::Bool = true, lighting = "LL",  cache_file::String = "./data/audio_segments_upscaled_smoothed.feather")
+function load_data(path::String; use_cached::Bool = true, lighting = "HL",  cache_file::String = "./data/audio_segments_upscaled_smoothed.feather")
     @info "Loading data from $path"
     @info "Looking for cache file $cache_file"
     if use_cached && isfile(cache_file)
@@ -212,8 +212,8 @@ function load_data(path::String; use_cached::Bool = true, lighting = "LL",  cach
     audio_segments_df_upsampled = upsample(audio_segments_df, 1000, [:subject, :eye, :event_id])
     all_subj_fixed = deblink_smooth_interpolate(
         audio_segments_df_upsampled;
-        extend=100,
-        window_length=65,
+        extend=80,
+        window_length=100,
         sr=1000,
     )
     # now is a good time to save

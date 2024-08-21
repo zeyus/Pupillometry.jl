@@ -1,14 +1,14 @@
 include("util/Data.jl")
 include("util/Processing.jl")
 
-all_subj_fixed = load_data("G:/data/pupillometry", use_cached=false, cache_file="G:/github_projects/Pupillometry/data/audio_segments_upscaled_smoothed.feather")
+all_subj_fixed = load_data("D:/data/pupillometry", use_cached=false, cache_file="D:/github_projects/Pupillometry.jl/data/audio_segments_upscaled_smoothed.feather")
 
 # plot the data
 function mean_baseline_subtract(x; sr::Int = 1000)
     # find the first audio event
     fa = findfirst(x.audio .== 1)
     baseline = [
-        x.diameter_px[idx] for (idx,ts) in enumerate(x.ms) if idx < fa
+        x.diameter_px[idx] for (idx,ts) in enumerate(x.ms) if idx < fa && !x.blink[idx] && !x.artifact[idx]
     ]
     if isempty(baseline)
         return x.diameter_px
@@ -23,6 +23,8 @@ audio_segments_df_grouped_subj = combine(
         :diameter_px,
         :ms,
         :audio,
+        :blink,
+        :artifact,
     ]) => (
         (x) -> mean_baseline_subtract(x)
     ) => :relative_diameter_px_scaled,
@@ -40,7 +42,7 @@ audio_segments_df_grouped_subj = combine(
 )
 
 min_ms = 500
-max_ms = 5000
+max_ms = 6000
 
 audio_segments_df_grouped_subj = audio_segments_df_grouped_subj[
     audio_segments_df_grouped_subj.relative_ms .>= min_ms,
@@ -53,7 +55,7 @@ audio_segments_df_grouped_subj = audio_segments_df_grouped_subj[
 ]
 
 # plot all events for one subject
-example_subject = "2F"
+example_subject = "10F"
 single_subject_events = audio_segments_df_grouped_subj[audio_segments_df_grouped_subj.subject .== example_subject, :]
 single_subject_events_left = single_subject_events[single_subject_events.eye .== "left", :]
 single_subject_events_right = single_subject_events[single_subject_events.eye .== "right", :]
@@ -70,8 +72,8 @@ p1 = plot(
 # add artifact and blink markers
 single_subject_blinks = single_subject_events_left[single_subject_events_left.blink .== 1, :]
 single_subject_artifacts = single_subject_events_left[single_subject_events_left.artifact .== 1, :]
-scatter!(single_subject_blinks.relative_ms, single_subject_blinks.relative_diameter_px_scaled, label="Blink", color=:red, markerstrokewidth=0.2, markerstrokealpha=0.1)
-scatter!(single_subject_artifacts.relative_ms, single_subject_artifacts.relative_diameter_px_scaled, label="Artifact", color=:green, markerstrokewidth=0.2, markerstrokealpha=0.1)
+scatter!(single_subject_blinks.relative_ms, single_subject_blinks.relative_diameter_px_scaled, label="Blink", color=:red, markerstrokewidth=0, markerstrokealpha=0, markersize=1)
+scatter!(single_subject_artifacts.relative_ms, single_subject_artifacts.relative_diameter_px_scaled, label="Artifact", color=:green, markerstrokewidth=0, markerstrokealpha=0, markersize=1)
 
 p2 = plot(
     single_subject_events_right.relative_ms,
@@ -86,8 +88,8 @@ p2 = plot(
 # add artifact and blink markers
 single_subject_blinks = single_subject_events_right[single_subject_events_right.blink .== 1, :]
 single_subject_artifacts = single_subject_events_right[single_subject_events_right.artifact .== 1, :]
-scatter!(single_subject_blinks.relative_ms, single_subject_blinks.relative_diameter_px_scaled, label="Blink", color=:red, markerstrokewidth=0.2, markerstrokealpha=0.1)
-scatter!(single_subject_artifacts.relative_ms, single_subject_artifacts.relative_diameter_px_scaled, label="Artifact", color=:green, markerstrokewidth=0.2, markerstrokealpha=0.1)
+scatter!(single_subject_blinks.relative_ms, single_subject_blinks.relative_diameter_px_scaled, label="Blink", color=:red, markerstrokewidth=0.0, markerstrokealpha=0.0, markersize=1)
+scatter!(single_subject_artifacts.relative_ms, single_subject_artifacts.relative_diameter_px_scaled, label="Artifact", color=:green, markerstrokewidth=0.0, markerstrokealpha=0.0, markersize=1)
 
 
 
